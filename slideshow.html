@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Image Slideshow</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+        }
+        
+        .slideshow-container {
+            position: relative;
+            width: 80%;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .slide {
+            display: none;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .slide.active {
+            display: block;
+        }
+        
+        .slide img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slide-info {
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .prev { left: 10px; }
+        .next { right: 10px; }
+        
+        .dots-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .dot {
+            height: 15px;
+            width: 15px;
+            margin: 0 5px;
+            background-color: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .dot.active, .dot:hover {
+            background-color: rgba(255, 255, 255, 0.8);
+            transform: scale(1.2);
+        }
+        
+        .counter {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+        }
+        
+        .autoplay-controls {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="slideshow-container">
+    <div class="counter">
+        <span id="current">1</span> / <span id="total">0</span>
+    </div>
+    
+    <div id="slideContainer">
+        <!-- Slides will be populated by JavaScript -->
+    </div>
+    
+    <button class="nav-button prev" onclick="changeSlide(-1)">&#10094;</button>
+    <button class="nav-button next" onclick="changeSlide(1)">&#10095;</button>
+</div>
+
+<div class="dots-container" id="dotsContainer">
+    <!-- Dots will be populated by JavaScript -->
+</div>
+
+<div class="autoplay-controls">
+    <button class="control-btn" onclick="toggleAutoplay()" id="playPauseBtn">Pause</button>
+    <button class="control-btn" onclick="changeSpeed(-1000)">Slower</button>
+    <button class="control-btn" onclick="changeSpeed(1000)">Faster</button>
+</div>
+
+<script>
+    // ADD YOUR IMAGE FILES HERE - just list the filenames in your directory
+    const imageFiles = [
+        'image1.png',
+        'image2.png', 
+        'image3.png',
+        'image4.png',
+        'image5.png'
+        // Add more filenames as needed
+    ];
+    
+    let currentSlide = 0;
+    let autoplayInterval;
+    let autoplaySpeed = 3000; // milliseconds
+    let isAutoplay = true;
+    
+    function initializeSlideshow() {
+        const slideContainer = document.getElementById('slideContainer');
+        const dotsContainer = document.getElementById('dotsContainer');
+        
+        // Clear existing content
+        slideContainer.innerHTML = '';
+        dotsContainer.innerHTML = '';
+        
+        // Create slides
+        imageFiles.forEach((filename, index) => {
+            // Create slide
+            const slide = document.createElement('div');
+            slide.className = 'slide';
+            if (index === 0) slide.classList.add('active');
+            
+            const img = document.createElement('img');
+            img.src = filename;
+            img.alt = `Slide ${index + 1}`;
+            img.onerror = function() {
+                this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=';
+            };
+            
+            const slideInfo = document.createElement('div');
+            slideInfo.className = 'slide-info';
+            slideInfo.textContent = filename;
+            
+            slide.appendChild(img);
+            slide.appendChild(slideInfo);
+            slideContainer.appendChild(slide);
+            
+            // Create dot
+            const dot = document.createElement('span');
+            dot.className = 'dot';
+            if (index === 0) dot.classList.add('active');
+            dot.onclick = () => showSlide(index);
+            dotsContainer.appendChild(dot);
+        });
+        
+        // Update counter
+        document.getElementById('total').textContent = imageFiles.length;
+        
+        // Start autoplay
+        if (isAutoplay) {
+            startAutoplay();
+        }
+    }
+    
+    function showSlide(index) {
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.dot');
+        
+        // Hide all slides
+        slides.forEach(slide => slide.classList.remove('active'));
+        dots.forEach(dot => dot.classList.remove('active'));
+        
+        // Show current slide
+        slides[index].classList.add('active');
+        dots[index].classList.add('active');
+        
+        // Update counter
+        document.getElementById('current').textContent = index + 1;
+        
+        currentSlide = index;
+    }
+    
+    function changeSlide(direction) {
+        let newIndex = currentSlide + direction;
+        
+        if (newIndex >= imageFiles.length) {
+            newIndex = 0;
+        } else if (newIndex < 0) {
+            newIndex = imageFiles.length - 1;
+        }
+        
+        showSlide(newIndex);
+    }
+    
+    function startAutoplay() {
+        autoplayInterval = setInterval(() => {
+            changeSlide(1);
+        }, autoplaySpeed);
+    }
+    
+    function stopAutoplay() {
+        clearInterval(autoplayInterval);
+    }
+    
+    function toggleAutoplay() {
+        const btn = document.getElementById('playPauseBtn');
+        if (isAutoplay) {
+            stopAutoplay();
+            btn.textContent = 'Play';
+            isAutoplay = false;
+        } else {
+            startAutoplay();
+            btn.textContent = 'Pause';
+            isAutoplay = true;
+        }
+    }
+    
+    function changeSpeed(adjustment) {
+        autoplaySpeed = Math.max(1000, Math.min(10000, autoplaySpeed + adjustment));
+        if (isAutoplay) {
+            stopAutoplay();
+            startAutoplay();
+        }
+    }
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') changeSlide(-1);
+        if (e.key === 'ArrowRight') changeSlide(1);
+        if (e.key === ' ') {
+            e.preventDefault();
+            toggleAutoplay();
+        }
+    });
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', initializeSlideshow);
+</script>
+
+</body>
+</html>
